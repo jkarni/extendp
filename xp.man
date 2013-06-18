@@ -1,0 +1,54 @@
+.TH xp "1" "June 17 2013" "Julian K. Arni"  "The xp Manual"
+
+.SH NAME
+
+xp - The pipe wildcard.
+
+.SH SYNOPSIS
+
+\fBxp\fR [\fB-seSE\fR]
+
+.SH DESCRIPTION
+
+\fBxp\fR partially evaluates a sequence of piped commands, stopping at its own
+invocation. It then allows any further commands specified at its prompt to be
+added to the pipe in its stead. It can be seen as a "pipe wildcard," and is
+useful in seeing a partial evaluation of a pipeline, and modifying that
+pipeline accordingly.
+
+\fBxp\fR is meant to be used with pipes:
+
+.RS 5
+\fI progA | progB ... | \fB xp | \fI progX ...\fR
+.RE
+
+Without any flags, \fBxp\fR prints the output of of progA, progB ... to tty
+(without passing it to progX ...), and waits for a user command[s]. This
+command is executed and passed the output of the pipes up to \fBxp\fR as
+\fIits\fR input. The output of that is then passed on to progX ... .
+
+Thus, running:
+
+.RS 5
+\fI progA | progB ... | \fB xp \fI | progX ...\fR
+.RE
+
+and then typing \fI[cmd]\fR at the prompt is ultimately equivalent to 
+
+.RS 5
+\fI progA | progB ... | \fR [cmd] |\fI progX ...\fR
+.RE
+
+Except that the partial result is printed to the terminal. Similarly, hitting
+\fBRETURN\fR (without any commands) at the prompt is equivalent to not using xp
+in the first place (except, once again, for the partial result of the pipe
+being printed to the console).
+
+
+.SH OPTIONS
+
+.SH EXAMPLES 
+
+.SH SEE ALSO
+
+.SH HISTORY
