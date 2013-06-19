@@ -27,30 +27,17 @@ void usage(FILE *tty)
 
 char *fgets_b(char *buffer, size_t buflen, FILE *fp)
 {
-    if (fgets(buffer, buflen, fp) != 0)
+    if (fgets(buffer, buflen, fp) != NULL)
     {
         size_t len = strlen(buffer);
         if (len > 0 && buffer[len-1] == '\n')
             buffer[len-1] = '\0';
         return buffer;
     }
-    /*else if ((ppid = getppid()) != 1) {*/
-        /*ps()*/
-        /*fprintf(stdout, "PPID: %d", ppid);*/
-    /*}*/
     return 0;
 
 }
 
-/* Signal handler that checks whether the signal was sent by parent and alters
- * its file descriptors accordingly */
-/*void sigpar(int signo)*/
-/*{*/
-    /*if (signo == SIGRTUSR1)*/
-    /*{*/
-         
-    /*}*/
-/*}*/
 
 /* Send input to pager */
 /*void pager_p(FILE *tty)*/
@@ -63,11 +50,11 @@ char *fgets_b(char *buffer, size_t buflen, FILE *fp)
 /* Read in stdin, return a pointer to an array of lines */
 char ** echo_in(FILE *tty, int S_flag)
 {
-    static char *lines[MAXLINES];
-    int line = 0;
-    size_t len = 0;
-    ssize_t read;
-    char *curline = 0;
+    static char         *lines[MAXLINES];
+    char                *curline = 0;
+    int                 line = 0;
+    size_t              len = 0;
+    ssize_t             read;
 
     while ((read = getline(&curline, &len, stdin)) > 0)
     {
@@ -107,17 +94,19 @@ int main(int argc, char *argv[])
 {
     FILE             *fpout;   /* Pipe extension */
     FILE             *tty;
+    int              master;
     char             **lines;
+    char             prompt[MAXCHAR];
 
     /* Write directly to tty to avoid piping the output forward */
     if ((tty = fopen(ctermid(NULL), "w+")) == NULL)
         perror("Error: fopen error");
+    setbuf(tty, NULL);
 
     /* Opts */
     int s_flag, e_flag, E_flag, S_flag;
     s_flag = e_flag = S_flag = E_flag = 0;
 
-    char prompt[MAXCHAR];
 
     while ((argc > 1) && (argv[1][0] == '-'))
     {
@@ -185,6 +174,7 @@ int main(int argc, char *argv[])
         if (fputs(lines[i++], fpout) == EOF)
             perror("Error: fputs to pipe\n");
     }
+    pclose(fpout);
     exit(EXIT_SUCCESS);
 }
 
