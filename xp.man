@@ -10,11 +10,12 @@ xp - The pipe wildcard.
 
 .SH DESCRIPTION
 
-\fBxp\fR partially evaluates a sequence of piped commands, stopping at its own
-invocation. It then allows any further commands specified at its prompt to be
-added to the pipe in its stead. It can be seen as a "pipe wildcard," and is
-useful in seeing a partial evaluation of a pipeline, and modifying that
-pipeline accordingly.
+\fBxp\fR partially evaluates a sequence of piped commands, stopping at
+its own invocation. It then allows any further commands specified at its
+prompt to be added to the pipe in its stead. It can be seen as a "pipe
+wildcard," and is useful in seeing a partial evaluation (or perhaps more
+accurately, decomposition) of a pipeline, and modifying that pipeline
+accordingly.
 
 \fBxp\fR is meant to be used with pipes:
 
@@ -44,10 +45,23 @@ Except that the partial result is printed to the terminal. Similarly, hitting
 in the first place (except, once again, for the partial result of the pipe
 being printed to the console).
 
+At \fBxp\fR's prompt too \fBxp\fR can be invoked. This can be useful for
+progressively filtering some input (see the \fBEXAMPLES\fR section below).
 
 .SH OPTIONS
 
+\fB-S\fR
+.RS 5 
+Number the lines piped to \fBxp\fR and prompt the user to select one.
+The line will be piped out by \fBxp\fR. (This is much like the shell "select".)
+.RE
+
 .SH EXAMPLES 
+
+\fB cd `find . -name "myfile*" | xp | xargs dirname`\fR  
+.RS 5 
+Select one of the files found by \fBfind\fR to \fBcd\fR into its directory.
+.RE
 
 .SH SEE ALSO
 
