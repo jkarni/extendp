@@ -1,2 +1,2 @@
 xp : extend.c
-	cc -O2 -Wall extend.c -o xp 
+	cc -O2 -Wall -lreadline extend.c -o xp 

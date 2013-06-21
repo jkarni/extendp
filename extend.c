@@ -8,15 +8,19 @@
 #include <errno.h>
 #include <termios.h>
 #include <string.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #define MAXCHAR 1000
 #define MAXLINES 10000
 
 #define PAGER "${PAGER:-less}"
 
-extern int errno;
+#define PROMPT "xp % "
 
-int line;
+extern int  errno;
+char        *tmpfifo_n;
+int         line;
 
 void usage(FILE *tty)
 {
@@ -25,19 +29,30 @@ void usage(FILE *tty)
     exit(EXIT_FAILURE);
 }
 
-char *fgets_b(char *buffer, size_t buflen, FILE *fp)
+
+/* Fgets with readline */
+char *fgets_rl(FILE *fp)
 {
-    if (fgets(buffer, buflen, fp) != NULL)
-    {
-        size_t len = strlen(buffer);
-        if (len > 0 && buffer[len-1] == '\n')
-            buffer[len-1] = '\0';
-        return buffer;
-    }
-    return 0;
+    char *buffer = (char *)NULL;
+    rl_instream = fp;
+    rl_outstream = fp;
+    buffer = readline(PROMPT);
+    /* If the line has any text in it,
+       save it on the history. */
+    if (buffer && *buffer)
+      add_history (buffer);
+    return buffer;
 
 }
 
+void mktmpfifo(){
+    tmpfifo_n = "temp.fifo";
+    if (mkfifo(tmpfifo_n, S_IREAD | S_IWRITE) != 0)
+    {
+        perror("Error: Could not create fifo ");
+        exit(EXIT_FAILURE);
+    }
+}
 
 /* Send input to pager */
 /*void pager_p(FILE *tty)*/
@@ -94,9 +109,8 @@ int main(int argc, char *argv[])
 {
     FILE             *fpout;   /* Pipe extension */
     FILE             *tty;
-    int              master;
     char             **lines;
-    char             prompt[MAXCHAR];
+    char             *prompt = (char *)NULL;
 
     /* Write directly to tty to avoid piping the output forward */
     if ((tty = fopen(ctermid(NULL), "w+")) == NULL)
@@ -104,8 +118,8 @@ int main(int argc, char *argv[])
     setbuf(tty, NULL);
 
     /* Opts */
-    int s_flag, e_flag, E_flag, S_flag;
-    s_flag = e_flag = S_flag = E_flag = 0;
+    int s_flag, t_flag, E_flag, S_flag;
+    s_flag = t_flag = S_flag = E_flag = 0;
 
 
     while ((argc > 1) && (argv[1][0] == '-'))
@@ -115,8 +129,8 @@ int main(int argc, char *argv[])
             case 's':
                 s_flag = 1;
                 break;
-            case 'e':
-                e_flag = 1;
+            case 't':
+                t_flag = 1;
                 break;
             case 'S':
                 S_flag = 1;
@@ -134,12 +148,12 @@ int main(int argc, char *argv[])
         --argc;
     }
 
+
     lines = echo_in(tty, S_flag );
 
     int choice = 0;
 
     /* Prompt for pipe extension */
-    fputs("extendp %? ", tty);
 
     if (S_flag)
     {
@@ -151,9 +165,10 @@ int main(int argc, char *argv[])
         fputs(lines[choice], stdout);
         exit(EXIT_SUCCESS);
     }
-    else if (fgets_b(prompt, 100, tty) == NULL)
-        perror("Error: Could not read user input.\n");
-    else if (strlen(prompt) == 0)   /* No pipe extensions given, return stdin */
+
+    prompt = fgets_rl(tty);
+    
+    if (prompt != NULL && strlen(prompt) == 0)   /* No pipe extensions given, return stdin */
     {
         int j = 0;
         while (lines[j] != NULL)
@@ -163,18 +178,37 @@ int main(int argc, char *argv[])
         }
     }
 
-    /* Open pipe to pipe extension */
-    if ((fpout = popen(prompt, "w")) == NULL)
-        perror("Error: Could not open pipe");
 
-    /* Pass stdin to pipe extension */
-    int i = 0;
-    while (lines[i] != NULL)
+    if (!t_flag)
     {
-        if (fputs(lines[i++], fpout) == EOF)
-            perror("Error: fputs to pipe\n");
+        /* Open pipe to pipe extension */
+        if ((fpout = popen(prompt, "w")) == NULL)
+            perror("Error: Could not open pipe");
+
+    } else 
+    {
+        char *ttyn = "/dev/tty";
+        char com[MAXCHAR];
+        snprintf(com, MAXCHAR, "%s > %s", prompt, ttyn);
+        if ((fpout = popen(com, "w")) == NULL)
+            perror("Error: Could not open pipe");
     }
+
+    /* Pass stdin to pipe extension (and, if t, to stdout) */
+    int i = 0;
+    while (lines[++i] != NULL)
+    {
+        if (fputs(lines[i - 1], fpout) == EOF)
+            perror("Error: fputs to pipe\n");
+        if (t_flag)
+        {
+            if (fputs(lines[i - 1], stdout) == EOF)
+                perror("Error: fputs to stdout\n");
+        }
+    }
+    free(prompt);
     pclose(fpout);
+
     exit(EXIT_SUCCESS);
 }
 
