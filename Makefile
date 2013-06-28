@@ -1,2 +1,4 @@
 xp : extend.c
-	cc -O2 -Wall -lreadline extend.c -o xp 
+	gcc -O2 -Wall -lreadline extend.c `pkg-config --cflags --libs glib-2.0` -o xp
+
+
