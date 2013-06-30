@@ -1,58 +1,18 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/wait.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <errno.h>
-#include <termios.h>
-#include <string.h>
-#include <readline/readline.h>
-#include <readline/history.h>
-#include <getopt.h>
-#include <glib.h>
+#include <extendp.h>
 
-#define MAXCHAR         1000
-#define MAXLINES        10000
-
-#define PAGER           "${PAGER:-less}"
-#define EDITOR          "${EDITOR:-vi}"
-
-#define PROMPT          "xp % "
-#define SPROMPT         "xp - SELECT % "
- 
-#define CFG  "extendp.cfg"
-
-
-#define RED     "\x1b[31m"
-#define GREEN   "\x1b[32m"
-#define YELLOW  "\x1b[33m"
-#define BLUE    "\x1b[34m"
-#define MAGENTA "\x1b[35m"
-#define CYAN    "\x1b[36m"
-#define BOLD    "\x1b[1m"
-#define RESET   "\x1b[0m"
-
-#define color(color, text)       color "" text "" RESET 
-
-#define NOL     3
-#define OFFSET  19
-
-#define LCYAN   4
-#define LBOLD   3
-#define LRESET  3
+extern char     *find_and_replace(const char*, char*, int*); 
 
 FILE             *tty;
 extern int      errno;
 char            *tmpfifo_n;
 int             line;
 char            *menu_cfg;
-GRegex          *re;
 int             no_of_matches;
+int             offset = 1;
 
-void insert_substring(char*, char*, int);
-char* substring(char*, int, int);
+void            insert_substring(char*, char*, int);
+void            insert_substring_off(char*, char*, int);
+char*           substring(char*, int, int);
 
 void usage(FILE *tty)
 {
@@ -81,118 +41,12 @@ int menu_flag   = 0,
 
 /* --------------------------------------------------------------------------*/
 
-/* Config -------------------------------------------------------------------*/
-
-
-/* Get the regular expression associated with a group */
-GRegex * get_remenu(const gchar *group_name)
-{
-    const gchar    *regex;
-    GKeyFile       *cfgfile;
-    
-    cfgfile = g_key_file_new();
-
-    if (g_key_file_load_from_file(cfgfile, CFG, G_KEY_FILE_NONE, NULL) == FALSE) {
-        perror("Error: Config file could not be loaded");
-        exit(EXIT_FAILURE);
-    }
-
-    if ((regex = g_key_file_get_value(cfgfile, group_name, "regex", NULL)) == NULL) {
-        perror("Error: Could not find regex for group");
-        exit(EXIT_FAILURE);
-    }
-
-    printf("%s\n", regex);
-
-    g_key_file_free(cfgfile);
-
-    return g_regex_new("(staff)", 0, 0, NULL);
-
-}
-
-/* Substitute matches in a line with menu numbers and color codes, returning
- * the new line, and update the array of all matches */
-
-char *find_and_replace(const gchar *line, char *all_matches[] ) {
-    GMatchInfo   *match_info;
-    int          offset = 0;
-    char         number[OFFSET];
-    char         *newline;
-    char         digits[17];
-    gint         *start;
-    gint         *end;
-
-    if ((newline = malloc(strlen(line) + 30)) == NULL) {
-        perror("Error: malloc");
-        exit(EXIT_FAILURE);
-    }
-    strcpy(newline, line);
-    g_regex_match(re, line, 0, &match_info);
-
-    while (g_match_info_matches(match_info)) {
-        gchar *word = g_match_info_fetch(match_info, 0);
-        all_matches[no_of_matches++] = word;
-        /*sprintf(number, "%3d", no_of_matches);*/
-        if (g_match_info_fetch_pos(match_info, 1, start, end)) {
-            sprintf(digits, CYAN "(%3d)" RESET, no_of_matches);
-            printf("%s", digits);
-            insert_substring(newline, digits, 1);
-        }
-        /*printf("%s", menu_no(1));*/
-        /*offset += OFFSET;*/
-        /*insert_substring(newline, RESET, *end + offset);*/
-        /*offset += LRESET;*/
-        g_free(word);
-        g_match_info_next(match_info, NULL);
-    }
-    g_match_info_free(match_info);
-
-    return newline;
-}
-
-void insert_substring(char *a, char *b, int position)
-{
-   char *f, *e;
-   int length;
- 
-   length = strlen(a);
- 
-   f = substring(a, 1, position - 1 );      
-   e = substring(a, position, length-position+1);
- 
-   strcpy(a, "");
-   strcat(a, f);
-   free(f);
-   strcat(a, b);
-   strcat(a, e);
-   free(e);
-}
- 
-char *substring(char *string, int position, int length) {
-   char *pointer;
-   int c;
- 
-   pointer = malloc(length+1);
- 
-   if (pointer == NULL)
-       exit(EXIT_FAILURE);
- 
-   for (c = 0 ; c < length ; c++) 
-      *(pointer+c) = *((string+position-1)+c);       
- 
-   *(pointer+c) = '\0';
- 
-   return pointer;
-}
-
-/* --------------------------------------------------------------------------*/
-
 
 /* Fgets with readline */
 char *fgets_rl(FILE *fp)
 {
     char            *buffer = (char *)NULL;
-    static char     *col_prompt = color(CYAN, PROMPT);
+    static char     *col_prompt = color(CYAN, PS1);
 
     rl_instream = fp;
     rl_outstream = fp;
@@ -213,25 +67,6 @@ void mktmpfifo()
     }
 }
 
-/* Open pager */
-FILE *pager_p()
-{
-    FILE                *fpager;
-
-    if ( (fpager = popen(PAGER, "w")) == NULL)
-        perror("Error: popen error");
-    return fpager;
-}
-
-FILE *editor_p()
-{
-    FILE                *feditor;
-
-    if ( (feditor = popen(EDITOR, "w")) == NULL)
-        perror("Error: popen error");
-    return feditor;
-
-}
 
 /* Read in stdin, return a pointer to an array of lines */
 char ** echo_in(FILE *tty, int editor_flag, int menu_flag)
@@ -239,13 +74,15 @@ char ** echo_in(FILE *tty, int editor_flag, int menu_flag)
     static char         *lines[MAXLINES];
     char                *curline = 0;
     int                 line = 0;
+    int                 *no_of_matches;
     size_t              len = 0;
     ssize_t             read;
     FILE                *tmpf;
 
     char                *matches[100];
-
     char                *default_bol = color(CYAN, "-->");
+
+    no_of_matches = 0;
 
     while ((read = getline(&curline, &len, stdin)) > 0) {
         lines[line] = malloc(sizeof(curline));
@@ -264,10 +101,11 @@ char ** echo_in(FILE *tty, int editor_flag, int menu_flag)
         if (menu_flag == 1){   /* Select mode: number the lines */
             char *pre;
             if (!menu_cfg) {
-                fprintf(tty, color(CYAN, "%3d)") " %s", line, lines[line]);
+                fprintf(tty, color(MARKERC, MENU_L) " %s", line, lines[line]);
             }
             else {
-                fprintf(tty, "%s\n", find_and_replace(lines[line], matches));
+                fprintf(tty, "%s\n", find_and_replace(lines[line], matches,
+                            no_of_matches));
                 /*free()*/
             }
         }
@@ -370,7 +208,8 @@ int main(int argc, char *argv[])
         if (menu_cfg) {
             /*printf("Regex: %s", menu_cfg);*/
         }
-        fputs(SPROMPT, tty);
+        fputs(MENU_PS2, tty);
+        fputs(MENU_PS1, tty);
         if (fscanf(tty, "%d", &choice) != 1) {
             perror("Error: choice not recognized");
             exit(EXIT_FAILURE);
