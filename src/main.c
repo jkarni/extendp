@@ -1,13 +1,13 @@
-#include <extendp.h>
+#include "extendp.h"
 
-extern char     *find_and_replace(const char*, char*, int*); 
+extern char     *find_and_replace(const char*, char*, int*);
+
 
 FILE             *tty;
 extern int      errno;
 char            *tmpfifo_n;
 int             line;
 char            *menu_cfg;
-int             no_of_matches;
 int             offset = 1;
 
 void            insert_substring(char*, char*, int);
@@ -74,7 +74,7 @@ char ** echo_in(FILE *tty, int editor_flag, int menu_flag)
     static char         *lines[MAXLINES];
     char                *curline = 0;
     int                 line = 0;
-    int                 *no_of_matches;
+    int                 no_of_matches;
     size_t              len = 0;
     ssize_t             read;
     FILE                *tmpf;
@@ -104,8 +104,7 @@ char ** echo_in(FILE *tty, int editor_flag, int menu_flag)
                 fprintf(tty, color(MARKERC, MENU_L) " %s", line, lines[line]);
             }
             else {
-                fprintf(tty, "%s\n", find_and_replace(lines[line], matches,
-                            no_of_matches));
+                fprintf(tty, "%s\n", find_and_replace(lines[line], matches, no_of_matches));
                 /*free()*/
             }
         }
@@ -191,7 +190,7 @@ int main(int argc, char *argv[])
         pclose(edit);
         int i = 0;
         while ((fgets(lines[i++], 1000, tmpf)) != NULL) {}
-        
+
     }
     else if (menu_cfg) {
         re = get_remenu(menu_cfg);
@@ -217,10 +216,10 @@ int main(int argc, char *argv[])
         fputs(lines[choice], stdout);
         exit(EXIT_SUCCESS);
     }
-    else 
+    else
         prompt = fgets_rl(tty);
 
-    if (prompt != NULL && strlen(prompt) == 0) {   
+    if (prompt != NULL && strlen(prompt) == 0) {
         /* No pipe extensions given, return stdin */
         int j = 0;
         while (lines[j] != NULL) {

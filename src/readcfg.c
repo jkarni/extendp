@@ -1,12 +1,12 @@
-#include <extendp.h>
+#include "extendp.h"
 
 /* readcfg.c
  *
  * Readcfg includes functions for reading the (ini-style) configuration file,
  * and processing lines with regexes for inclusiong in a extendp menu. */
 
-GRegex          *re;
 int             offset;
+GRegex          *re;
 
 void            insert_substring_off(char*, char*, int);
 static void     insert_substring(char*, char*, int);
@@ -64,14 +64,14 @@ char *find_and_replace(const gchar *line, char *all_matches[], int *no_of_matche
     while (g_match_info_matches(match_info)) {
 
         gchar *word = g_match_info_fetch(match_info, 0);
-        all_matches[(*no_of_matches)++] = word;
+        all_matches[no_of_matches++] = word;
 
         if (g_match_info_fetch_pos(match_info, 1, start, end)) {
 
-            sprintf(digits, CYAN "(%3d->)" RESET BOLD, *no_of_matches);
+            sprintf(digits, CYAN "(%3d->)" RESET BOLD, no_of_matches);
             insert_substring_off(newline, digits, *start);
 
-            sprintf(digits, RESET CYAN "(<-%3d)" RESET, *no_of_matches);
+            sprintf(digits, RESET CYAN "(<-%3d)" RESET, no_of_matches);
             insert_substring_off(newline, digits, *end);
         }
 
