@@ -6,7 +6,11 @@ xp - The pipe wildcard.
 
 .SH SYNOPSIS
 
-\fBxp\fR [\fB-seSE\fR]
+\fBxp\fR [\fB-p \fR| \fB--pager\fR] [\fB-m \fR| \fB--menu\fR]
+
+.RS 3
+[\fB-p\fR | \fB--pager\fR] [(\fB--m=\fR | \fB--menu=\fR) <regexgroup>]
+.RE
 
 .SH DESCRIPTION
 
@@ -50,10 +54,24 @@ progressively filtering some input (see the \fBEXAMPLES\fR section below).
 
 .SH OPTIONS
 
-\fB-S\fR
+\fB-m\fR
 .RS 5 
 Number the lines piped to \fBxp\fR and prompt the user to select one.
 The line will be piped out by \fBxp\fR. (This is much like the shell "select".)
+Multiple lines can be chosen, in which case the numbers must be separated by
+commas.
+.RE
+
+\fB--m=\fR<regexgroup>
+.RS 5 
+\fBxp\fR will numerically label each match in the input string of  \fIthe first
+group\fR in the regex listed under the group \fI<regexgroup>\fR in the
+\fB~/.extendp.cfg\fR file. Choosing a number at the \fBxp\fR prompt produces
+the corresponding match as \fBxp\fR's output. Multiple numbers, separated by
+commas, can also be used.
+
+\fBxp\fR uses the
+Perl-compatible regular expression syntax provided by Glib.  
 .RE
 
 .SH EXAMPLES 
