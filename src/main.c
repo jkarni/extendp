@@ -42,7 +42,6 @@ struct option long_options[] =
 };
 
 int menu_flag   = 0,
-    editor_flag = 0,
     pager_flag  = 0,
     tee_flag    = 0;
 
@@ -71,6 +70,19 @@ char *fgets_rl(FILE *fp)
     return buffer;
 }
 
+FILE *pager_p()
+{
+    FILE *output;
+
+    char *pager = getenv("PAGER") ? getenv("PAGER") : "less";
+
+    output = popen(pager, "w");
+    if (!output) {
+       perror("Error: popen error.\n");
+       exit(EXIT_FAILURE);
+    }
+    return output;
+}
 
 /* Read in stdin, and store input a pointer to an array of lines 
  *
@@ -82,7 +94,7 @@ char *fgets_rl(FILE *fp)
  *      void
  *
  * */
-static void echo_in(FILE *tty, char *result[], int editor_flag, int menu_flag)
+static void echo_in(FILE *tty, char *result[], int menu_flag)
 {
     char                *curline = 0;
     int                 line = 0;
@@ -109,7 +121,7 @@ static void echo_in(FILE *tty, char *result[], int editor_flag, int menu_flag)
 
         if (menu_flag == 1){   /* Select mode: number the lines */
             if (!menu_cfg) {
-                fprintf(tty, color(MARKERC, MENU_L) " %s", line, result[line]);
+                fprintf(tty, color(MARKERC, MENU_L) " %s", line + 1, result[line]);
             }
             else {
                 if ((re_line = malloc(strlen(result[line]) + 1000)) == NULL) {
@@ -121,8 +133,6 @@ static void echo_in(FILE *tty, char *result[], int editor_flag, int menu_flag)
                 free(re_line);
             }
         }
-        else if (editor_flag == 1)
-            fprintf(tty, "%s", result[line]);
         else
             fprintf(tty, "%s %s", color(PROMPTC, PS1), result[line]);
 
@@ -167,9 +177,6 @@ int main(int argc, char *argv[])
                 if (optarg)
                      menu_cfg = optarg;
                 break;
-            case 'e':
-                editor_flag = 1;
-                break;
             case 'p':
                 pager_flag = 1;
                 break;
@@ -187,48 +194,36 @@ int main(int argc, char *argv[])
         }
     }
 
-    /*if (pager_flag) {*/
-        /*FILE *pager = pager_p();*/
-        /*lines = echo_in(pager, editor_flag, menu_flag );*/
-        /*pclose(pager);*/
-    /*}*/
-
-    if (editor_flag) {
-        char        com[80];
-        char        template[] = "extendp.XXXXXX";
-        int         tempfd;
-        FILE        *tmpf;
-
-        if ((tempfd = mkstemp(template)) == -1)
-            perror("Error: Could not open temp file");
 
 
-        tmpf = fdopen(tempfd, "w+");
-        echo_in(tmpf, lines, editor_flag, menu_flag);
-
-        if (sprintf(com, "%s %s", "vim", template) < 0)
-            perror("Error: sprintf");
-        printf("%s", com);
-        FILE *edit = popen(com, "w");
-        pclose(edit);
-        int i = 0;
-        while ((fgets(lines[i++], 1000, tmpf)) != NULL) {}
-
-    }
-    else if (menu_cfg) {
+    if (menu_cfg) {
         matches = malloc(1000*sizeof(char *));
         re = get_remenu(menu_cfg);
-        echo_in(tty, lines, editor_flag, menu_flag );
+        if (!pager_flag)
+            echo_in(tty, lines, menu_flag );
+        else {
+            FILE *pager = pager_p();
+            echo_in(pager, lines, menu_flag );
+            pclose(pager);
+        }
         g_regex_unref(re);
     }
-    else
-        echo_in(tty, lines, editor_flag, menu_flag );
+    else {
+        if (!pager_flag)
+            echo_in(tty, lines, menu_flag );
+        else {
+            FILE *pager = pager_p();
+            echo_in(pager, lines, menu_flag );
+            pclose(pager);
+        }
+    
+    }
 
 
     /* Prompt for pipe extension */
 
     if (menu_flag) {
-        int choice[MAXCHOICES];
+        int choice[MAXCHOICES] = {0};
         int no_choices = 0;
 
         fputs(color(PROMPTC, MENU_PS2), tty);
@@ -241,12 +236,13 @@ int main(int argc, char *argv[])
 
 
         fscanf(tty, "%4d", &choice[no_choices++]);
-        while (no_choices < MAXCHOICES && fscanf(tty, ",%4d", &choice[no_choices++]) == 1) { }
+        while (no_choices < MAXCHOICES && 
+                fscanf(tty, ",%4d", &choice[no_choices++]) == 1) { }
          
         no_choices = 0;
         while (choice[no_choices] != 0) {
             if (!menu_cfg)
-                fputs(lines[choice[no_choices++]], stdout);
+                fputs(lines[choice[no_choices++] - 1], stdout);
             else {
                 fputs(matches[choice[no_choices++] - 1], stdout);
                 fputs("\n", stdout);
