@@ -84,3 +84,7 @@ To get something like this:
 ![git log examples](/static/gitlog.png)
 
 
+# Contributions
+
+I suck at C, and doubt there's much here that couldn't stand improving; pull
+requests are, therefore, particularly encouraged.
