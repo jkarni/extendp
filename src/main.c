@@ -8,6 +8,7 @@
 
 extern void find_and_replace(const char*, char**, char* );
 
+int             cursize = MAXLINES;
 
 FILE             *tty;
 int             line;
@@ -94,15 +95,17 @@ FILE *pager_p()
  *      void
  *
  * */
-static void echo_in(FILE *tty, char *result[], int menu_flag)
+static char **echo_in(FILE *tty, char **result, int menu_flag)
 {
     char                *curline = 0;
     int                 line = 0;
     size_t              len = 0;
     extern char         **matches;
+    extern int          cursize;
+    char                **new_result = NULL;
 
     
-    char                *re_line;
+    char                *re_line = NULL;
 
 
     while (getline(&curline, &len, stdin) > 0) {
@@ -136,21 +139,29 @@ static void echo_in(FILE *tty, char *result[], int menu_flag)
         else
             fprintf(tty, "%s %s", color(PROMPTC, PS1), result[line]);
 
-        if (line++ > MAXLINES) {            /* TODO: Resizing array? */
-            perror("Error: Too many lines.\n");
-            exit(EXIT_FAILURE);
+        if (line++ == cursize) {
+            cursize = 2*cursize;
+            if ((new_result = (char **) realloc(result, cursize*sizeof(char*))) == NULL) {
+                perror("Error reallocating memory");
+                free(result);
+                exit(EXIT_FAILURE);
+            }
+            else {
+                result = new_result;
+            }
         }
     }
     fputs("\n", tty);
     free(curline);
 
     result[line] = NULL;
+    return result;
 }
 
 int main(int argc, char *argv[])
 {
     FILE             *fpout;   /* Pipe extension */
-    char             **lines;
+    char             **lines = NULL;
     char             *prompt = (char *)NULL;
     int              opt;
     extern char      *optarg;
@@ -200,20 +211,20 @@ int main(int argc, char *argv[])
         matches = malloc(1000*sizeof(char *));
         re = get_remenu(menu_cfg);
         if (!pager_flag)
-            echo_in(tty, lines, menu_flag );
+            lines = echo_in(tty, lines, menu_flag );
         else {
             FILE *pager = pager_p();
-            echo_in(pager, lines, menu_flag );
+            lines = echo_in(pager, lines, menu_flag );
             pclose(pager);
         }
         g_regex_unref(re);
     }
     else {
         if (!pager_flag)
-            echo_in(tty, lines, menu_flag );
+            lines = echo_in(tty, lines, menu_flag );
         else {
             FILE *pager = pager_p();
-            echo_in(pager, lines, menu_flag );
+            lines = echo_in(pager, lines, menu_flag );
             pclose(pager);
         }
     
