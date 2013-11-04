@@ -19,7 +19,7 @@ else
 	CFLAGS=-I./$(SDIR) -O3
 endif
 
-LIBS = -lreadline `pkg-config --cflags --libs glib-2.0`
+LIBS = -lreadline `pkg-config -lncurses --cflags --libs glib-2.0`
 
 _DEPS = extendp.h
 DEPS = $(patsubst %,$(SDIR)/%,$(_DEPS))
