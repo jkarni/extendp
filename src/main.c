@@ -3,7 +3,7 @@
 /* extendp
  *
  * Print out and manipulate interactively stdin before passing the result to
- * stdout. 
+ * stdout.
  */
 
 extern void find_and_replace(const char*, char**, char* );
@@ -85,7 +85,7 @@ FILE *pager_p()
     return output;
 }
 
-/* Read in stdin, and store input a pointer to an array of lines 
+/* Read in stdin, and store input a pointer to an array of lines
  *
  * Params:
  *      *tty: FILE to read from
@@ -104,12 +104,12 @@ static char **echo_in(FILE *tty, char **result, int menu_flag)
     extern int          cursize;
     char                **new_result = NULL;
 
-    
+
     char                *re_line = NULL;
 
 
     while (getline(&curline, &len, stdin) > 0) {
-        result[line] = malloc(sizeof(curline));
+        result[line] = malloc(sizeof(curline) + 1);
 
         if (result[line] == 0) {
             perror("Error: Unable to allocated memory\n");
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
         perror("Error: fopen error");
         exit(EXIT_FAILURE);
     }
-   
+
 
     /* Write directly to tty to avoid piping the output forward */
     if ((tty = fopen(ctermid(NULL), "w+")) == NULL) {
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
             lines = echo_in(pager, lines, menu_flag );
             pclose(pager);
         }
-    
+
     }
 
 
@@ -247,9 +247,9 @@ int main(int argc, char *argv[])
 
 
         fscanf(tty, "%4d", &choice[no_choices++]);
-        while (no_choices < MAXCHOICES && 
+        while (no_choices < MAXCHOICES &&
                 fscanf(tty, ",%4d", &choice[no_choices++]) == 1) { }
-         
+
         no_choices = 0;
         while (choice[no_choices] != 0) {
             if (!menu_cfg)
@@ -261,8 +261,8 @@ int main(int argc, char *argv[])
         }
         if (menu_cfg)
             free(matches);
-             
-        
+
+
         exit(EXIT_SUCCESS);
     }
     else
