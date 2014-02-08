@@ -1,4 +1,8 @@
 xp
 extend
 xp.dSYM
+*.out
+*.o
+.DS_Store
+bin/**
 
