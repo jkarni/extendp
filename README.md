@@ -1,32 +1,27 @@
-<link href="http://kevinburke.bitbucket.org/markdowncss/markdown.css" rel="stylesheet"></link>
+![Git log](https://raw.github.com/jkarni/extendp/master/static/gifs/menu-gitlog.gif)
 # extendp - The pipe wildcard
 
-Pipes are great, but they're often a bit too inflexible. Suppose you want to
-open a file named `README`; you're not sure where it is, so you type:
+Let's say you want to checkout someone git commit; you could tell which one it
+is from the commit message, but you of course don't know its hash. So you type:
 
-    find / -name "README.*"
+    git log
 
-Wow - way too many lines of "Permission denied" to make sense of. Let's try
-again:
+Find the commit, and then checkout it out with `git checkout <commit>`. This
+pattern - using a command to get some information, and then using this
+information to determine your next command - is common, but it's not entirely
+ideal. After all, passing some information from one command to another (without
+manually reading and inputing that information yourself) is exactly what pipes
+are for; if we could use them in circumstances such as these, life would be
+marginally better. But of course there's that little step in between that
+requires the human touch: figuring out what commit you want.
+ 
+**extendp** is the command for that human touch. It lets you see the output of
+some command and pipe it along. Kind of like `tee`; but unlike tee, it lets you
+see the output *before* deciding which command to pipe it to. There are two
+fairly distinct modes, default and menu, but they both work on that shared
+principle.
 
-    find / -name "README.*" 2>/dev/null
-
-Still too many results. So you limit the search to your home folder:
-
-    find $HOME -name "README.*" 2>/dev/null
-
-And still there are too many. Despite your familiarity with your shell's vi or
-emacs bindings, typing these commands in each time is getting annoying, as is waiting
-for `find` to run again and again. If only you could interactively filter,
-seeing the output so far, manipulating it with, say `grep`, and finally using
-it with `open`.
-
-If that's the case, you could try this:
-
-    find / -name "README.*" | xp | xargs open
-
-But you'll need this first:
-
+# Installation
 
     git clone https://github.com/jkarni/extendp.git
     cd extendp
@@ -34,6 +29,7 @@ But you'll need this first:
 
 (readline and glib are dependencies, so you might need to install those first:
 `brew install glib readline` on OS X, for instace.)
+
 # Usage
 
 ## Default mode
