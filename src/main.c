@@ -109,13 +109,6 @@ static char **echo_in(FILE *tty, char **result, int menu_flag)
 
 
     while (getline(&curline, &len, stdin) > 0) {
-        result[line] = malloc(sizeof(curline) + 1);
-
-        if (result[line] == 0) {
-            perror("Error: Unable to allocated memory\n");
-            exit(EXIT_FAILURE);
-        }
-
         if ((result[line] = strdup(curline)) == NULL){
             perror("Error: strdup - insufficient memory\n");
             exit(EXIT_FAILURE);
