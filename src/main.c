@@ -100,8 +100,6 @@ static char **echo_in(FILE *tty, char **result, int menu_flag)
     char                *curline = 0;
     int                 line = 0;
     size_t              len = 0;
-    extern char         **matches;
-    extern int          cursize;
     char                **new_result = NULL;
 
 
@@ -157,8 +155,6 @@ int main(int argc, char *argv[])
     char             **lines = NULL;
     char             *prompt = (char *)NULL;
     int              opt;
-    extern char      *optarg;
-    extern GRegex    *re;
 
     if ((lines = (char**)malloc(sizeof(char*) * MAXLINES)) == NULL) {
         perror("Error: fopen error");

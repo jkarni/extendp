@@ -58,4 +58,3 @@
 
 
 extern GRegex   *re;
-extern int      errno;
