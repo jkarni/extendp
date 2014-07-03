@@ -50,8 +50,23 @@ int menu_flag   = 0,
 
 /* --------------------------------------------------------------------------*/
 
+/* Malloc or die. */
+void *xmalloc(size_t size)
+{
+    void *p = malloc(size);
+    if (p) return p;
+    perror("Error: malloc");
+    exit(EXIT_FAILURE);
+}
 
-
+/* Realloc or die. */
+void *xrealloc(void *p, size_t size)
+{
+    p = realloc(p, size);
+    if (p) return p;
+    perror("Error: realloc");
+    exit(EXIT_FAILURE);
+}
 
 /* Fgets with GNU readline */
 char *fgets_rl(FILE *fp)
@@ -100,7 +115,6 @@ static char **echo_in(FILE *tty, char **result, int menu_flag)
     char                *curline = 0;
     int                 line = 0;
     size_t              len = 0;
-    char                **new_result = NULL;
 
 
     char                *re_line = NULL;
@@ -118,10 +132,7 @@ static char **echo_in(FILE *tty, char **result, int menu_flag)
                 fprintf(tty, color(MARKERC, MENU_L) " %s", line + 1, result[line]);
             }
             else {
-                if ((re_line = malloc(strlen(result[line]) + 1000)) == NULL) {
-                    perror("Error: malloc");
-                    exit(EXIT_FAILURE);
-                }
+                re_line = xmalloc(strlen(result[line]) + 1000);
                 find_and_replace(result[line], matches, re_line);
                 fprintf(tty, "%s", re_line);
                 free(re_line);
@@ -132,14 +143,7 @@ static char **echo_in(FILE *tty, char **result, int menu_flag)
 
         if (line++ == cursize) {
             cursize = 2*cursize;
-            if ((new_result = (char **) realloc(result, cursize*sizeof(char*))) == NULL) {
-                perror("Error reallocating memory");
-                free(result);
-                exit(EXIT_FAILURE);
-            }
-            else {
-                result = new_result;
-            }
+            result = xrealloc(result, cursize*sizeof(char*));
         }
     }
     fputs("\n", tty);
@@ -156,11 +160,7 @@ int main(int argc, char *argv[])
     char             *prompt = (char *)NULL;
     int              opt;
 
-    if ((lines = (char**)malloc(sizeof(char*) * MAXLINES)) == NULL) {
-        perror("Error: fopen error");
-        exit(EXIT_FAILURE);
-    }
-
+    lines = xmalloc(sizeof(char*) * MAXLINES);
 
     /* Write directly to tty to avoid piping the output forward */
     if ((tty = fopen(ctermid(NULL), "w+")) == NULL) {
@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
 
 
     if (menu_cfg) {
-        matches = malloc(1000*sizeof(char *));
+        matches = xmalloc(1000*sizeof(char *));
         re = get_remenu(menu_cfg);
         if (!pager_flag)
             lines = echo_in(tty, lines, menu_flag );

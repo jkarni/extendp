@@ -55,6 +55,7 @@
 #define MENU_L          "§%-3d↦"
 #define MENU_R          "↤%3d§"
 
-
+void * xmalloc(size_t);
+void * xrealloc(void *, size_t);
 
 extern GRegex   *re;
