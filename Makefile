@@ -283,7 +283,7 @@ target_alias =
 top_build_prefix = 
 top_builddir = .
 top_srcdir = .
-SUBDIRS = src
+SUBDIRS = src doc
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 

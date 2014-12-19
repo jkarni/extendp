@@ -35,5 +35,5 @@ AC_TYPE_SIZE_T
 
 AC_CONFIG_SRCDIR([src/extendp.h])
 AC_CONFIG_HEADER([config.h])
-AC_CONFIG_FILES([ Makefile src/Makefile ])
+AC_CONFIG_FILES([ Makefile src/Makefile doc/Makefile ])
 AC_OUTPUT
