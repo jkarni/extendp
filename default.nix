@@ -5,6 +5,7 @@ in
 , glib ? pkgs.glib
 , pkgconfig ? pkgs.pkgconfig
 , readline ? pkgs.readline
+, automake ? pkgs.automake
 }:
 
 stdenv.mkDerivation {
